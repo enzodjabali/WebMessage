@@ -1,13 +1,34 @@
 #!/bin/sh
 # Replace environment variable placeholders in config.js at runtime
 
-# Default values if not set
-IOSMB_SERVER_IP="${IOSMB_SERVER_IP:-192.168.1.100}"
-IOSMB_SERVER_PORT="${IOSMB_SERVER_PORT:-8180}"
-IOSMB_SERVER_PASSWORD="${IOSMB_SERVER_PASSWORD:-your-password-here}"
-IOSMB_SERVER_SSL="${IOSMB_SERVER_SSL:-false}"
-IOSMB_WEB_USERNAME="${IOSMB_WEB_USERNAME:-admin}"
-IOSMB_WEB_PASSWORD_HASH="${IOSMB_WEB_PASSWORD_HASH:-240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9}"
+file_env() {
+	var="$1"
+	fileVar="${var}_FILE"
+	def="${2:-}"
+
+	eval val="\${${var}:-}"
+	eval fileVal="\${${fileVar}:-}"
+
+	if [ -n "$fileVal" ]; then
+		if [ ! -r "$fileVal" ]; then
+			echo "ERROR: ${fileVar} is set to '${fileVal}' but that file is not readable" >&2
+			exit 1
+		fi
+		val="$(cat "$fileVal")"
+	elif [ -z "$val" ]; then
+		val="$def"
+	fi
+
+	export "$var"="$val"
+	unset "$fileVar"
+}
+
+file_env IOSMB_SERVER_IP "192.168.1.100"
+file_env IOSMB_SERVER_PORT "8180"
+file_env IOSMB_SERVER_PASSWORD "your-password-here"
+file_env IOSMB_SERVER_SSL "false"
+file_env IOSMB_WEB_USERNAME "admin"
+file_env IOSMB_WEB_PASSWORD_HASH "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9"
 
 # Copy template to config.js
 cp /usr/share/nginx/html/config.template.js /usr/share/nginx/html/config.js
