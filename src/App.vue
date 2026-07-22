@@ -8,6 +8,7 @@
 <script>
 import Home from '@/views/Home'
 import Login from '@/components/Login.vue'
+import { isAuthenticated, clearAuthentication, requestPersistentStorage } from '@/utils/auth'
 
 export default {
   name: 'App',
@@ -21,9 +22,8 @@ export default {
     }
   },
   mounted() {
-    // Check if user is already authenticated (check both localStorage and sessionStorage)
-    this.isAuthenticated = localStorage.getItem('isAuthenticated') === 'true' || 
-                           sessionStorage.getItem('isAuthenticated') === 'true'
+    requestPersistentStorage()
+    this.isAuthenticated = isAuthenticated()
   },
   methods: {
     handleAuthenticated() {
@@ -31,8 +31,7 @@ export default {
     },
     handleLogout() {
       this.isAuthenticated = false
-      localStorage.removeItem('isAuthenticated')
-      sessionStorage.removeItem('isAuthenticated')
+      clearAuthentication()
     }
   }
 }

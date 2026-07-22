@@ -258,6 +258,13 @@ body > .expandable-image.expanded > img {
   opacity: 1;
   cursor: pointer;
 }
+
+@media (hover: none) {
+  .expand-button,
+  .download-button {
+    opacity: 1;
+  }
+}
 .expandable-image img {
   width: 100%;
 }

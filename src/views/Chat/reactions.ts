@@ -5,6 +5,7 @@ import { sendSocket, state as messagesState } from './messages'
 const state = reactive({
   interval: null as Nullable<NodeJS.Timeout>,
   timeHolding: 0,
+  longPressFired: false,
   initialX: null as Nullable<number>,
   initialY: null as Nullable<number>,
   reactingMessage: null as Nullable<JQuery<HTMLElement>>,
@@ -21,15 +22,17 @@ const openReactionMenu = (msgId: string, textId: string, guid: string, reactions
   state.reactingMessagePart = part
   state.reactingMessage = el
   state.reactingToBalloon = balloon
+  if (navigator.vibrate) navigator.vibrate(8)
 }
 
 const startInterval = (msgId: string, textId: string, guid: string, reactions: object, part: number, balloon: boolean) => {
   if (!state.interval) {
+    state.longPressFired = false
     state.interval = setInterval(() => {
       state.timeHolding++
-      if (state.timeHolding > 7) {
-        //> 0.7 seconds, will trigger at 0.8 seconds
+      if (state.timeHolding > 4) {
         openReactionMenu(msgId, textId, guid, reactions, part, balloon)
+        state.longPressFired = true
         if (state.interval) clearInterval(state.interval)
         state.interval = null
         state.timeHolding = 0
@@ -46,12 +49,24 @@ const stopInterval = () => {
   state.initialY = null
 }
 
-const stopIntervalWhen = (e: MouseEvent) => {
-  if (state.interval) {
-    if (!state.initialX) state.initialX = e.clientX
-    if (!state.initialY) state.initialY = e.clientY
+const stopIntervalTouch = (e: TouchEvent) => {
+  if (state.longPressFired) {
+    state.longPressFired = false
+    if (e.cancelable) e.preventDefault()
+  }
+  stopInterval()
+}
 
-    if (Math.abs(state.initialX - e.clientX) > 4 || Math.abs(state.initialY - e.clientY) > 4) {
+const stopIntervalWhen = (e: MouseEvent | TouchEvent) => {
+  if (state.interval) {
+    const point = 'touches' in e ? e.touches[0] : e
+    if (!point) return
+
+    if (!state.initialX) state.initialX = point.clientX
+    if (!state.initialY) state.initialY = point.clientY
+
+    const tolerance = 'touches' in e ? 10 : 4
+    if (Math.abs(state.initialX - point.clientX) > tolerance || Math.abs(state.initialY - point.clientY) > tolerance) {
       stopInterval()
     }
   }
@@ -103,6 +118,7 @@ export default () => {
     openReactionMenu,
     startInterval,
     stopInterval,
+    stopIntervalTouch,
     stopIntervalWhen,
     closeReactionMenu,
     sendReaction,

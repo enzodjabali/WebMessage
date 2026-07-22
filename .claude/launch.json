@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "iosmb-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["yarn@1.22.22", "serve"],
+      "port": 8080
+    }
+  ]
+}

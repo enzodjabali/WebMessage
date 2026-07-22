@@ -15,6 +15,9 @@ This is a web-only client, removing all Electron dependencies and running entire
 - Emoji support with multiple emoji sets
 - Privacy mode
 - Message caching
+- Fully responsive: iOS Messages-style single-pane layout on phones, two-pane on desktop/iPad
+- Installable PWA (Add to Home Screen on iOS runs it fullscreen like a native app)
+- Native-feeling touch gestures: swipe chat rows for Hide Alerts/Delete, long-press messages for tapbacks
 
 ## Requirements
 

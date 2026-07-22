@@ -2,7 +2,10 @@
   <transition name="fade" mode="out-in">
     <div class="messageContainer" ref="messageContainer" :key="$route.params.id">
       <div class="titlebar">
-        <div class="receiverContainer">
+        <div class="backBtn" @click="goBack">
+          <feather type="chevron-left" stroke="#1287ff" size="30"></feather>
+        </div>
+        <div class="receiverContainer" :class="{ compose: $route.params.id == 'new' }">
           <span class="label">To:</span>
           <span
             class="contact"
@@ -73,6 +76,10 @@
                       @mouseup.left="reactions.stopInterval"
                       @mouseleave="reactions.stopInterval"
                       @mousemove="reactions.stopIntervalWhen"
+                      @touchstart.passive="reactions.startInterval(msg.id, ii, text.guid, text.reactions, index)"
+                      @touchmove.passive="reactions.stopIntervalWhen"
+                      @touchend="reactions.stopIntervalTouch"
+                      @touchcancel="reactions.stopInterval"
                       @click.right="
                         functions.rightClickMessage({
                           id: msg.id,
@@ -137,6 +144,12 @@
                         @mouseup.left="reactions.stopInterval"
                         @mouseleave="reactions.stopInterval"
                         @mousemove="reactions.stopIntervalWhen"
+                        @touchstart.passive="
+                          reactions.startInterval(msg.id, ii, text.guid, text.reactions, text.attachments.length, text.balloon)
+                        "
+                        @touchmove.passive="reactions.stopIntervalWhen"
+                        @touchend="reactions.stopIntervalTouch"
+                        @touchcancel="reactions.stopInterval"
                         @click.right="
                           functions.rightClickMessage({
                             id: msg.id,
@@ -300,6 +313,7 @@ import functionsComp from './functions'
 import messagesComp from './messages'
 import inputComp from './input'
 import reactionsComp from './reactions'
+import { nav } from '@/utils/nav'
 
 export default {
   name: 'Message',
@@ -327,6 +341,17 @@ export default {
 
     return { functions, messages, input, reactions }
   },
+  methods: {
+    goBack() {
+      const state = window.history.state
+      if (state && state.back != null) {
+        nav.suppressNextPop = true
+        this.$router.back()
+      } else {
+        this.$router.push('/')
+      }
+    },
+  },
 }
 </script>
 
@@ -337,6 +362,7 @@ export default {
   width: 100%;
   margin-right: 0px;
   margin-top: 16px;
+  padding-bottom: var(--sab, 0px);
 
   .subjectInput {
     border: none;
@@ -704,12 +730,17 @@ export default {
     height: 39px;
     max-height: 39px;
     min-height: 39px;
+    padding-top: var(--sat, 0px);
     background-color: #373737;
     border-bottom: 2px solid #1d1d1d;
 
+    .backBtn {
+      display: none;
+    }
+
     .closeBtn {
       position: absolute;
-      top: 16px;
+      top: calc(16px + var(--sat, 0px));
       right: 8px;
       -webkit-app-region: no-drag;
 
@@ -1014,6 +1045,165 @@ export default {
     .type {
       font-weight: 500;
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .messageContainer {
+    font-size: 15px;
+
+    .titlebar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 20;
+      height: auto;
+      max-height: none;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding-top: var(--sat);
+      background-color: rgba(29, 29, 29, 0.78);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 0.5px solid var(--ios-separator-strong, rgba(84, 84, 88, 0.65));
+
+      .backBtn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        min-height: 44px;
+        margin-left: var(--sal);
+        cursor: pointer;
+
+        &:active {
+          opacity: 0.4;
+        }
+      }
+
+      .closeBtn {
+        display: none;
+      }
+    }
+
+    .receiverContainer {
+      flex: 1;
+      padding: 8px 12px;
+      margin-right: calc(44px + var(--sar));
+      text-align: center;
+      font-size: 17px;
+      font-weight: 600;
+      overflow: hidden;
+
+      .label {
+        display: none;
+        float: none;
+      }
+
+      &.compose {
+        text-align: left;
+        font-weight: 400;
+        font-size: 15px;
+
+        .label {
+          display: inline-block;
+        }
+      }
+
+      .contact {
+        width: auto;
+        max-width: 100%;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  .messages {
+    padding-top: calc(var(--sat) + 54px);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+    margin-right: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .message {
+    font-size: 16px;
+    border-radius: 18px;
+    padding: 7px 12px;
+  }
+
+  .messages .timegroup {
+    font-size: 12px;
+  }
+
+  .textboxContainer {
+    margin-top: 8px;
+    padding-bottom: calc(var(--sab) + 6px);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+    background-color: #1d1d1d;
+
+    .msgTextboxWrapper {
+      .messageInput {
+        float: none;
+        flex: 1;
+        width: auto;
+        font-size: 16px;
+        line-height: 20px;
+        border-radius: 18px;
+        padding: 7px 14px;
+        padding-right: 34px;
+      }
+
+      .sendBtn {
+        width: 28px;
+        height: 28px;
+        margin-left: -32px;
+        margin-right: 4px;
+        align-self: flex-end;
+        margin-bottom: 4px;
+
+        svg {
+          width: 28px;
+          height: 28px;
+        }
+      }
+
+      .feather {
+        width: 28px;
+        height: 28px;
+      }
+
+      .emojiBtn .emoji-mart {
+        position: fixed;
+        left: calc(var(--sal) + 8px);
+        right: calc(var(--sar) + 8px);
+        bottom: calc(var(--sab) + 58px);
+        width: auto !important;
+        max-height: calc(var(--vvh, 100vh) - var(--sat, 0px) - 130px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+    }
+
+    .subjectInput {
+      font-size: 16px;
+      line-height: 20px;
+    }
+  }
+
+  .attachmentPreview {
+    margin-left: 12px;
+    margin-right: 12px;
   }
 }
 </style>

@@ -5,6 +5,8 @@
       nostyle: !($store.state.macstyle || false),
       maximized: (false || !$store.state.acceleration) && window.process.platform !== 'darwin',
       privacy: $store.state.privacyMode,
+      'show-chat': $route.path.startsWith('/chat'),
+      'no-pane-anim': noPaneAnim,
     }"
   >
     <settings ref="settingsModal" @saved="chats.connectWS"></settings>
@@ -40,6 +42,7 @@
           <feather type="download" stroke="rgba(152,255,152,0.65)" size="20" @click="window.restart"></feather>
         </div>
       </div>
+      <div class="largeTitle">Messages</div>
       <div class="searchContainer">
         <input type="search" placeholder="Search" class="textinput" v-model="chats.state.search" />
       </div>
@@ -70,12 +73,14 @@
 </template>
 
 <script lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import Chat from '@/components/Chat.vue'
 import Settings from '@/components/Settings.vue'
 import Tooltip from '@/components/Tooltip.vue'
 import chatsComp from './chats'
 import windowComp from './window'
 import notificationsComp from './notifications'
+import { nav } from '@/utils/nav'
 
 export default {
   name: 'App',
@@ -89,7 +94,45 @@ export default {
     const window = windowComp()
     const notifications = notificationsComp()
 
-    return { chats, window, notifications }
+    const noPaneAnim = ref(false)
+    let popTimer: ReturnType<typeof setTimeout> | undefined
+    const onPopstate = () => {
+      if (nav.suppressNextPop) {
+        nav.suppressNextPop = false
+        return
+      }
+      noPaneAnim.value = true
+      globalThis.clearTimeout(popTimer)
+      popTimer = globalThis.setTimeout(() => {
+        noPaneAnim.value = false
+      }, 450)
+    }
+
+    const vv = globalThis.visualViewport
+    const onViewport = () => {
+      if (!vv) return
+      if (vv.scale > 1.01) return
+      document.documentElement.style.setProperty('--vvh', vv.height + 'px')
+      if (globalThis.matchMedia('(max-width: 768px)').matches) {
+        globalThis.scrollTo(0, 0)
+        const messages = document.querySelector('.messages')
+        if (messages) messages.scrollTop = messages.scrollHeight
+      }
+    }
+
+    onMounted(() => {
+      globalThis.addEventListener('popstate', onPopstate)
+      if (vv) {
+        vv.addEventListener('resize', onViewport)
+        onViewport()
+      }
+    })
+    onBeforeUnmount(() => {
+      globalThis.removeEventListener('popstate', onPopstate)
+      if (vv) vv.removeEventListener('resize', onViewport)
+    })
+
+    return { chats, window, notifications, noPaneAnim }
   },
   methods: {
     handleLogout() {
@@ -106,37 +149,6 @@ export default {
   margin-top: -2px;
   margin-bottom: -3px;
   // margin-right: 1px;
-}
-
-.confirmDialog {
-  .vc-container {
-    background-color: rgba(45, 45, 45, 0.9);
-    border: 1px solid rgba(25, 25, 25, 0.9);
-    .vc-text {
-      color: white;
-      font-weight: 300;
-      font-size: 14px;
-    }
-    .vc-title {
-      color: white;
-      font-weight: 500;
-    }
-  }
-
-  .vc-btn {
-    background-color: rgba(45, 45, 45, 0.9);
-    border-color: rgba(25, 25, 25, 0.9) !important;
-    color: rgba(255, 0, 0, 0.9);
-
-    &:hover {
-      background-color: rgba(45, 45, 45, 0.9);
-      filter: brightness(90%);
-    }
-
-    &.left {
-      color: #4083ff;
-    }
-  }
 }
 
 .vue-popover {
@@ -192,14 +204,19 @@ export default {
 
 .chats {
   margin-top: 12px;
-  max-height: calc(100% - 73px);
+  max-height: calc(100% - 73px - var(--sat, 0px));
   margin-right: 1px;
+  padding-bottom: var(--sab, 0px);
   overflow-y: auto;
   overflow-x: hidden;
 
   .simplebar-scrollbar:before {
     background: #575757;
   }
+}
+
+.largeTitle {
+  display: none;
 }
 
 .scrollable {
@@ -215,14 +232,12 @@ export default {
   }
 }
 
-@import url('https://fonts.googleapis.com/css?family=Roboto:light,regular,medium,thin,italic,mediumitalic,bold');
-
 html {
   height: 100%;
   max-height: 100%;
   width: 100%;
   background-color: rgba(29, 29, 29, 0);
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--system-font);
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -244,7 +259,7 @@ body {
 }
 
 #vueApp {
-  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--system-font);
   font-weight: 400;
   text-align: center;
   color: #ebecec;
@@ -422,7 +437,7 @@ body {
   width: calc(100% - 10px);
   height: 30px;
   padding: 5px;
-  padding-top: 7px;
+  padding-top: calc(7px + var(--sat, 0px));
 }
 
 .buttons {
@@ -559,5 +574,127 @@ input[type='search']::-webkit-input-placeholder {
   color: rgb(152, 152, 152);
   font-weight: 400;
   letter-spacing: 0.2px;
+}
+
+@media (max-width: 768px) {
+  html,
+  body {
+    height: 100%;
+    max-height: none;
+    width: 100%;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+    background-color: #1d1d1d;
+  }
+
+  #vueApp,
+  #vueApp.nostyle {
+    border: none;
+    border-radius: 0;
+    width: 100%;
+    height: var(--vvh, 100%);
+    bottom: auto;
+  }
+
+  #nav,
+  #vueApp.nostyle #nav {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(29, 29, 29, 1);
+  }
+
+  .titlebar {
+    -webkit-app-region: no-drag;
+    width: auto;
+    height: auto;
+    min-height: 36px;
+    padding: calc(var(--sat) + 8px) calc(var(--sar) + 10px) 0 calc(var(--sal) + 10px);
+
+    .buttons {
+      display: none;
+    }
+  }
+
+  .menuBtn {
+    margin-right: 4px;
+    padding: 4px 6px;
+  }
+
+  .statusIndicator {
+    margin-right: 4px;
+    padding: 4px 6px;
+  }
+
+  .largeTitle {
+    display: block;
+    text-align: left;
+    font-size: 34px;
+    line-height: 41px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: white;
+    padding: 2px calc(var(--sar) + 16px) 8px calc(var(--sal) + 16px);
+  }
+
+  .searchContainer {
+    padding: 0 calc(var(--sar) + 12px) 4px calc(var(--sal) + 12px);
+  }
+
+  #nav input[type='search']:not([type='range']):not([type='color']):not(.message-input) {
+    height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 16px;
+    background-color: rgba(118, 118, 128, 0.24);
+    background-position: 8px 9px, center;
+    border: none;
+
+    &:focus {
+      box-shadow: none;
+      animation: none;
+      border-radius: 10px !important;
+    }
+  }
+
+  .chats {
+    flex: 1;
+    max-height: none;
+    margin: 6px 0 0 0;
+    padding: 0 calc(var(--sar) + 8px) calc(var(--sab) + 12px) calc(var(--sal) + 8px);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  #content,
+  #vueApp.nostyle #content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: none;
+    border-radius: 0;
+    transform: translateX(100%);
+    transition: transform 0.35s var(--push-ease);
+    z-index: 10;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  #vueApp.show-chat #content {
+    transform: translateX(0);
+  }
+
+  #vueApp.no-pane-anim #content {
+    transition: none;
+  }
 }
 </style>

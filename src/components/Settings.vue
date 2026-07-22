@@ -562,6 +562,47 @@ label.select {
   }
 }
 
+@media (max-width: 768px) {
+  .modal .modal__dialog {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    max-height: 88%;
+    margin: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 10px 10px 0 0;
+    padding: 0.9rem 1.25rem calc(var(--sab) + 1.5rem);
+    animation: sheetUp 0.34s var(--push-ease);
+  }
+
+  .modal .modal__dialog::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(120, 120, 128, 0.5);
+    margin: 0 auto 14px;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .switch {
   padding-left: 8px;
   padding-right: 8px;

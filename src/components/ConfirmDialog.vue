@@ -28,6 +28,7 @@
               :disabled="dialog.auth ? !password : false"
               @click.stop="e => handleClickButton(e, true)"
               class="vc-btn"
+              :class="{ destructive: dialog.destructive }"
             >
               {{ dialog.button.yes }}
             </button>
@@ -47,6 +48,7 @@ const Component = {
       password: null,
       dialog: {
         auth: false,
+        destructive: false,
         title: '',
         message: '',
         button: {},
@@ -59,6 +61,7 @@ const Component = {
       this.password = null
       this.dialog = {
         auth: false,
+        destructive: false,
         title: '',
         message: '',
         button: {},
@@ -108,30 +111,8 @@ export default Component
 </script>
 
 <style>
-:root {
-  --title-color: black;
-  --message-color: black;
-  --overlay-background-color: #0000004a;
-  --container-box-shadow: #0000004a 0px 3px 8px 0px;
-  --base-background-color: #ffffff;
-  --button-color: #4083ff;
-  --button-background-color: #ffffff;
-  --button-border-color: #e0e0e0;
-  --button-background-color-disabled: #f5f5f5;
-  --button-background-color-hover: #f5f5f5;
-  --button-box-shadow-active: inset 0 2px 0px 0px #00000014;
-  --input-background-color: #ebebeb;
-  --input-background-color-hover: #dfdfdf;
-  --font-size-m: 16px;
-  --font-size-s: 14px;
-  --font-weight-black: 900;
-  --font-weight-bold: 700;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --font-weight-light: 300;
-}
 /**
-* Dialog
+* Dialog - styled like a native iOS (dark) UIAlertController
 */
 .vc-overlay *,
 .vc-overlay *:before,
@@ -145,29 +126,27 @@ export default Component
   padding: 0;
 }
 .vc-title {
-  color: var(--title-color);
+  color: #ffffff;
   padding: 0 1rem;
   width: 100%;
-  font-weight: var(--font-weight-black);
+  font-weight: 600;
   text-align: center;
-  font-size: var(--font-size-m);
-  line-height: initial;
-  margin-bottom: 5px;
+  font-size: 17px;
+  line-height: 22px;
 }
 .vc-text {
-  color: var(--message-color);
-  padding: 0 1rem;
+  color: #ffffff;
+  padding: 4px 1rem 0;
   width: 100%;
-  font-weight: var(--font-weight-medium);
+  font-weight: 400;
   text-align: center;
-  font-size: var(--font-size-s);
-  line-height: initial;
+  font-size: 13px;
+  line-height: 17px;
 }
 .vc-overlay {
-  background-color: var(--overlay-background-color);
+  background-color: rgba(0, 0, 0, 0.4);
   width: 100%;
   height: 100%;
-  transition: all 0.1s ease-in;
   left: 0;
   top: 0;
   z-index: 999999999999;
@@ -178,67 +157,65 @@ export default Component
   align-content: baseline;
 }
 .vc-container {
-  background-color: var(--base-background-color);
-  border-radius: 1rem;
-  width: 286px;
+  background-color: rgba(37, 37, 37, 0.86);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border-radius: 14px;
+  width: 270px;
   height: auto;
   display: grid;
   grid-template-rows: 1fr max-content;
-  box-shadow: var(--container-box-shadow);
+  overflow: hidden;
 }
 .vc-text-grid {
-  padding: 1rem;
+  padding: 19px 0 17px;
 }
 .vc-btn-grid {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-radius: 0 0 1rem 1rem;
   overflow: hidden;
+  border-top: 0.5px solid rgba(84, 84, 88, 0.65);
 }
 .vc-btn-grid.isMono {
   grid-template-columns: 1fr;
 }
 .vc-btn {
-  border-radius: 0 0 1rem 0;
-  color: var(--button-color);
-  background-color: var(--button-background-color);
+  border-radius: 0;
+  color: #0a84ff;
+  background-color: transparent;
   border: 0;
-  font-size: 1rem;
-  border-top: 1px solid var(--button-border-color);
+  font-size: 17px;
   cursor: pointer;
-  font-weight: var(--font-weight-bold);
+  font-weight: 600;
   outline: none;
-  min-height: 50px;
+  min-height: 44px;
+  transition: background-color 0.1s ease;
 }
-.vc-btn:hover {
-  background-color: var(--button-background-color-hover);
-}
-.vc-btn:disabled {
-  background-color: var(--button-background-color-disabled);
+.vc-btn.destructive {
+  color: #ff453a;
 }
 .vc-btn:active {
-  box-shadow: var(--button-box-shadow-active);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.vc-btn:disabled {
+  color: rgba(235, 235, 245, 0.3);
 }
 .vc-btn.left {
-  border-radius: 0;
-  border-right: 1px solid var(--button-border-color);
+  border-right: 0.5px solid rgba(84, 84, 88, 0.65);
+  font-weight: 400;
 }
 .vc-input[type='password'] {
-  width: 100%;
+  width: calc(100% - 32px);
   outline: none;
   border-radius: 8px;
-  height: 35px;
-  border: 0;
-  margin: 5px 0;
-  background-color: var(--input-background-color);
+  height: 32px;
+  border: 0.5px solid rgba(84, 84, 88, 0.65);
+  margin: 12px 16px 0;
+  background-color: rgba(118, 118, 128, 0.24);
+  color: #ffffff;
   padding: 0 0.5rem;
-  font-size: var(--font-size-m);
-  transition: 0.21s ease;
-}
-.vc-input[type='password']:hover,
-.vc-input[type='password']:focus {
-  background-color: var(--input-background-color-hover);
+  font-size: 14px;
 }
 /**
 * Transition

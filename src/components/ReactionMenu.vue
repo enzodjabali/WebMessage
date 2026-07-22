@@ -161,12 +161,17 @@ export default {
       this.clone = msgWrapper
       this.direction = parent.hasClass('send') ? 'right' : 'left'
 
+      const safeTop = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0
+      const minTop = window.matchMedia('(max-width: 768px)').matches ? safeTop + 58 : 8
       this.position = {}
-      this.position.top = p.top - 45 + 'px'
+      this.position.top = Math.max(p.top - 45, minTop) + 'px'
       if (this.direction == 'right') {
         this.position.right = 6 + 'px'
       } else {
-        this.position.left = p.left - 15 + 'px'
+        const menuWidth = 240
+        let left = p.left - 15
+        if (left + menuWidth > window.innerWidth - 8) left = window.innerWidth - 8 - menuWidth
+        this.position.left = Math.max(left, 8) + 'px'
       }
 
       const activeReactionsList = this.reactions.filter(
@@ -322,6 +327,23 @@ export default {
       &:before {
         left: 9px;
         right: unset;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  #reactionMenu {
+    .backdrop {
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .menu {
+      & > svg,
+      .fa-layers {
+        padding: 10px;
       }
     }
   }

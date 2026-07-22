@@ -4,6 +4,10 @@
     <div
       class="chatWrapper"
       @mousedown="dragMouseDown"
+      @touchstart.passive="touchStart"
+      @touchmove="touchMove"
+      @touchend="touchEnd"
+      @touchcancel="touchEnd"
       :style="{
         left: '-' + slideX + 'px',
       }"
@@ -102,6 +106,12 @@ export default {
       slideX: 0,
       closingSlider: false,
       sliderWidth: 120,
+      touchStartX: null,
+      touchStartY: null,
+      touchBaseSlide: 0,
+      touchIntent: null,
+      justSwiped: false,
+      openInterval: null,
     }
   },
   emits: ['navigated', 'deleted'],
@@ -120,6 +130,11 @@ export default {
   },
   methods: {
     navigate() {
+      if (this.slideX > 0 || this.justSwiped) {
+        if (this.slideX > 0) this.closeDragElement()
+        return
+      }
+
       this.$emit('navigated')
 
       if (this.$route.path != '/chat/' + this.chatid) {
@@ -162,6 +177,8 @@ export default {
       this.slideX = this.initialX - e.clientX
     },
     closeDragElement() {
+      clearInterval(this.openInterval)
+      this.openInterval = null
       this.closingSlider = true
       const interval = setInterval(() => {
         if (this.slideX <= 0) {
@@ -178,19 +195,24 @@ export default {
       document.onmouseup = null
       document.onmousemove = null
     },
+    openSlider() {
+      clearInterval(this.openInterval)
+      this.openInterval = setInterval(() => {
+        if (this.closingSlider) return
+        if (this.slideX >= this.sliderWidth) {
+          this.slideX = this.sliderWidth
+          clearInterval(this.openInterval)
+          this.openInterval = null
+          return
+        }
+
+        this.slideX += 3
+      }, 6)
+    },
     finishDragElement() {
       if (this.closingSlider) return
       if (this.slideX >= this.sliderWidth / 2.2) {
-        const interval = setInterval(() => {
-          if (this.closingSlider) return
-          if (this.slideX >= this.sliderWidth) {
-            this.slideX = this.sliderWidth
-            clearInterval(interval)
-            return
-          }
-
-          this.slideX += 3
-        }, 6)
+        this.openSlider()
       } else {
         this.closeDragElement()
       }
@@ -198,15 +220,60 @@ export default {
       document.onmouseup = null
       document.onmousemove = null
     },
+    touchStart(e) {
+      if (this.closingSlider) return
+      clearInterval(this.openInterval)
+      this.openInterval = null
+      const touch = e.touches[0]
+      this.touchStartX = touch.clientX
+      this.touchStartY = touch.clientY
+      this.touchBaseSlide = this.slideX
+      this.touchIntent = null
+    },
+    touchMove(e) {
+      if (this.touchStartX == null || this.closingSlider) return
+      const touch = e.touches[0]
+      const dx = touch.clientX - this.touchStartX
+      const dy = touch.clientY - this.touchStartY
+
+      if (!this.touchIntent) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+        this.touchIntent = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
+      }
+      if (this.touchIntent != 'h') return
+
+      if (e.cancelable) e.preventDefault()
+      this.slideX = Math.min(this.sliderWidth, Math.max(0, this.touchBaseSlide - dx))
+    },
+    touchEnd() {
+      if (this.touchStartX == null) return
+      this.touchStartX = null
+      this.touchStartY = null
+
+      if (this.touchIntent == 'h') {
+        this.justSwiped = true
+        setTimeout(() => {
+          this.justSwiped = false
+        }, 350)
+
+        if (this.slideX >= this.sliderWidth / 2.2) {
+          this.openSlider()
+        } else {
+          this.closeDragElement()
+        }
+      }
+      this.touchIntent = null
+    },
     deleteChat() {
       this.closeDragElement()
 
       this.$refs.deleteConfirmation.open({
-        title: 'Warning',
-        message: `Are you sure you want to delete your messages from ${this.author}? This cannot be undone.`,
+        title: 'Delete this conversation?',
+        message: `Your messages from ${this.author} will be deleted. This cannot be undone.`,
+        destructive: true,
         button: {
-          no: 'No',
-          yes: 'Yes',
+          no: 'Cancel',
+          yes: 'Delete',
         },
         callback: confirm => {
           if (confirm) {
@@ -366,6 +433,59 @@ export default {
     .hideAlerts {
       background: #5959d1;
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .chatContainer {
+    width: 100%;
+    height: 76px;
+    border-radius: 12px;
+
+    .slidableDiv {
+      div {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .unread {
+    margin-top: 33px;
+  }
+
+  .avatarContainer {
+    width: 64px;
+    padding-top: 13px;
+    margin-left: 0;
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+    }
+  }
+
+  .chatContent {
+    width: calc(100% - 75px);
+    font-size: 15px;
+    border-bottom: 0.5px solid var(--ios-separator, rgba(84, 84, 88, 0.45));
+  }
+
+  .title {
+    padding-top: 12px;
+  }
+
+  .author {
+    font-size: 16px;
+    max-width: 60%;
+  }
+
+  .date {
+    font-size: 14px;
+  }
+
+  .text {
+    font-size: 14px;
+    margin-top: -1px;
   }
 }
 </style>

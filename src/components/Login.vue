@@ -45,7 +45,7 @@
 
 <script>
 import { config } from '@/config'
-import { hashPassword } from '@/utils/auth'
+import { hashPassword, setAuthenticated } from '@/utils/auth'
 
 export default {
   name: 'Login',
@@ -82,12 +82,7 @@ export default {
           return
         }
         
-        // Authentication successful
-        if (this.rememberMe) {
-          localStorage.setItem('isAuthenticated', 'true')
-        } else {
-          sessionStorage.setItem('isAuthenticated', 'true')
-        }
+        setAuthenticated(this.rememberMe)
         this.$emit('authenticated')
       } catch (error) {
         console.error('Login error:', error)
@@ -105,9 +100,11 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
   background: #1D1D1D;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
-  padding: 20px;
+  padding: calc(20px + var(--sat, 0px)) 20px calc(20px + var(--sab, 0px));
+  box-sizing: border-box;
 }
 
 .login-box {
